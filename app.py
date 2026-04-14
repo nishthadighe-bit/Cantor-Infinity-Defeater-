@@ -10,39 +10,41 @@ st.write("### Can you list every decimal? I bet you can't.")
 st.sidebar.header("Challenge Settings")
 num_rows = st.sidebar.slider("How many numbers in your 'infinite' list?", 5, 20, 5)
 
-# Initialize list in session state
-if 'user_nums' not in st.session_state:
-    st.session_state.user_nums = [f"0.{i*11111:05d}"[:7] for i in range(1, 21)]
-
-# Create inputs
+# Create inputs dynamically
 updated_list = []
-cols = st.columns(1)
 for i in range(num_rows):
-    val = st.text_input(f"Decimal {i+1}", value=st.session_state.user_nums[i], key=f"input_{i}")
+    # Default values that are long enough for the diagonal
+    default_val = f"0.{str(i+1)*10}"[:12] 
+    val = st.text_input(f"Decimal {i+1}", value=default_val, key=f"input_{i}")
     updated_list.append(val)
 
 if st.button("EXECUTE DIAGONAL DEFEAT"):
-    new_num = "0."
+    new_num_digits = []
     diagonal_info = []
     
     for i in range(len(updated_list)):
         # Extract digit (i+2 because of '0.')
         try:
-            current_digit = updated_list[i][i+2]
-            replacement = "5" if current_digit != "5" else "4"
-            new_num += replacement
-            diagonal_info.append(current_digit)
-        except IndexError:
-            new_num += "9" # Safety for short inputs
+            # If the user input is too short, we'll assume the digit is '0'
+            current_digit = updated_list[i][i+2] if len(updated_list[i]) > i+2 else "0"
             
-    st.success(f"### DEFEATED! You missed: {new_num}")
+            replacement = "5" if current_digit != "5" else "4"
+            new_num_digits.append(replacement)
+            diagonal_info.append(current_digit)
+        except Exception:
+            new_num_digits.append("9")
+            diagonal_info.append("?")
+            
+    final_missing_num = "0." + "".join(new_num_digits)
+    st.success(f"### DEFEATED! You missed: {final_missing_num}")
     
-    # Data Scientist Flex: Show the logic
+    # Data Scientist Fix: Ensuring all arrays are the same length for the table
     explanation_df = pd.DataFrame({
         "Your List": updated_list,
         "Digit at Diagonal": diagonal_info,
-        "My Replacement": list(new_num[2:])
+        "My Replacement": new_num_digits
     })
     st.table(explanation_df)
     
     st.balloons()
+   
