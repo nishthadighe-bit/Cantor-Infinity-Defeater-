@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import random
 
 st.set_page_config(page_title="Infinity Defeater", page_icon="♾️")
 
@@ -10,12 +11,19 @@ st.write("### Can you list every decimal? I bet you can't.")
 st.sidebar.header("Challenge Settings")
 num_rows = st.sidebar.slider("How many numbers in your 'infinite' list?", 5, 20, 5)
 
-# Create inputs dynamically
+# --- Data Scientist Mind: Automation ---
+if st.sidebar.button("🔀 Randomize My List"):
+    # Generate random decimals for the current number of rows
+    st.session_state.user_nums = [f"0.{random.randint(1000000000, 9999999999)}" for _ in range(20)]
+
+# Initialize list in session state if it doesn't exist
+if 'user_nums' not in st.session_state:
+    st.session_state.user_nums = [f"0.{i*1111111111}"[:12] for i in range(1, 21)]
+
+# Create inputs dynamically using the session state
 updated_list = []
 for i in range(num_rows):
-    # Default values that are long enough for the diagonal
-    default_val = f"0.{str(i+1)*10}"[:12] 
-    val = st.text_input(f"Decimal {i+1}", value=default_val, key=f"input_{i}")
+    val = st.text_input(f"Decimal {i+1}", value=st.session_state.user_nums[i], key=f"input_{i}")
     updated_list.append(val)
 
 if st.button("EXECUTE DIAGONAL DEFEAT"):
@@ -23,11 +31,11 @@ if st.button("EXECUTE DIAGONAL DEFEAT"):
     diagonal_info = []
     
     for i in range(len(updated_list)):
-        # Extract digit (i+2 because of '0.')
         try:
-            # If the user input is too short, we'll assume the digit is '0'
+            # Logic: If input is short, treat missing digits as '0'
             current_digit = updated_list[i][i+2] if len(updated_list[i]) > i+2 else "0"
             
+            # The Mutation Logic
             replacement = "5" if current_digit != "5" else "4"
             new_num_digits.append(replacement)
             diagonal_info.append(current_digit)
@@ -38,13 +46,12 @@ if st.button("EXECUTE DIAGONAL DEFEAT"):
     final_missing_num = "0." + "".join(new_num_digits)
     st.success(f"### DEFEATED! You missed: {final_missing_num}")
     
-    # Data Scientist Fix: Ensuring all arrays are the same length for the table
+    # Show the proof table
     explanation_df = pd.DataFrame({
         "Your List": updated_list,
         "Digit at Diagonal": diagonal_info,
         "My Replacement": new_num_digits
     })
     st.table(explanation_df)
-    
     st.balloons()
    
